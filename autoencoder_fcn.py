@@ -34,7 +34,7 @@ def train():
 
     image_v = sess.run(batch_image)
     infer_v = sess.run(infer, feed_dict = {image_batch_ph: image_v})
-    print(infer_v[0])
+    print(infer_v.shape)
 
     coord.request_stop()
     coord.join(threads)
