@@ -41,3 +41,19 @@ def inference1(data):
     h_dconv1 = _dconv2d(pool1, weights, biases, output_shape)
     
   return h_dconv1
+
+def loss1(infer, labels):
+    l2_norm_loss = tf.reduce_mean(tf.square(infer - labels))
+    tf.add_to_collection('losses', l2_norm_loss)
+    return tf.add_n(tf.get_collection('losses'), name = 'total_loss')
+
+def training1(loss, learning_rate, global_step):
+    optimizer = tf.train.AdamOptimizer(learning_rate, epsilon = 1.0)
+    train_op = optimizer.minimize(loss, global_step = global_step)
+    ema = tf.train.ExponentialMovingAverage(decay=0.9999)
+    maintain_average_op = ema.apply(tf.trainable_variables())
+
+    with tf.control_dependencies([train_op]):
+        train_op_with_ema = tf.group(maintain_average_op)
+
+    return train_op_with_ema

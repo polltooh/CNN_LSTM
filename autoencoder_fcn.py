@@ -21,8 +21,16 @@ def train():
     batch_image = batching(image, 1)
 
     image_batch_ph = tf.placeholder(tf.float32, (1, 256, 256, 3), \
-            name = "batch_image")
+            name = "batch_images")
+
+    label_batch_ph = tf.placeholder(tf.float32, (1, 256, 256, 3), \
+            name = "batch_labels")
+
+    global_step = tf.Variable(0, name = 'global_step', trainable = False)
+
     infer = nt.inference1(image_batch_ph)
+    loss = nt.loss1(infer, label_batch_ph)
+    train_op = nt.training1(loss,FLAGS.init_learning_rate, global_step)
 
     sess = tf.Session()
     
@@ -31,10 +39,14 @@ def train():
 
     coord = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(coord = coord, sess = sess)
-
-    image_v = sess.run(batch_image)
-    infer_v = sess.run(infer, feed_dict = {image_batch_ph: image_v})
-    print(infer_v[0])
+    for i in xrange(FLAGS.max_training_iter):
+        image_v = sess.run(batch_image)
+        infer_v, loss_v,_ = sess.run([infer, loss, train_op], feed_dict = {image_batch_ph: image_v,label_batch_ph: image_v})
+        if (i != 0 and i % 100 == 0):
+            print("i: %d loss: %f" % (i,loss_v))
+        if( i!= 0 and i % 1000 == 0):
+            cv.imshow("inference", infer_v)
+            cv.waitKey(0)
 
     coord.request_stop()
     coord.join(threads)
