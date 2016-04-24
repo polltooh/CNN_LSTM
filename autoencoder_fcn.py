@@ -53,7 +53,7 @@ def train():
             print("i: %d loss: %f" % (i,loss_v))
         if (i!= 0 and i % 1000 == 0):
             # uf.display_image(np.hstack((image_v, infer_v)))
-            uf.save_image(np.hstack((image_v, infer_v)))
+            uf.save_image(np.hstack((image_v, infer_v)), loss_v)
 
     coord.request_stop()
     coord.join(threads)

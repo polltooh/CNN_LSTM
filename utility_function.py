@@ -25,6 +25,7 @@ def save_image(image_v, loss):
     if save_image_v.ndim == 4:
         save_image_v = save_image_v[0]
     save_image_v[:,:,[2,0]] = save_image_v[:,:,[0,2]]
+    save_image_v *= 255
     filename = "loss_%f.jpg" % (loss)
-    cv2.imwrite(filanme, save_image_v)
+    cv2.imwrite(filename, save_image_v)
 
