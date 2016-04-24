@@ -1,7 +1,6 @@
 import tensorflow as tf
 import numpy as np
 import cv2
-from matplotlib import pyplot as plt
 
 def read_image(image_name, feature_row, feature_col):
     image_bytes = tf.read_file(image_name)

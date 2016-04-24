@@ -8,9 +8,9 @@ import cv2
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string('train_log_dir','logs','''directory wherer to write event logs''')
 tf.app.flags.DEFINE_string('batch_size',1,'''batch size''')
-tf.app.flags.DEFINE_integer('max_training_iter', 100000,
+tf.app.flags.DEFINE_integer('max_training_iter', 1000000,
         '''the max number of training iteration''')
-tf.app.flags.DEFINE_float('init_learning_rate',0.001,
+tf.app.flags.DEFINE_float('init_learning_rate',0.1,
         '''initial learning rate''')
 tf.app.flags.DEFINE_string('model_dir', 'model_logs','''directory where to save the model''')
 
@@ -51,7 +51,7 @@ def train():
         infer_v, loss_v, _ = sess.run([infer, loss, train_op], feed_dict = {image_batch_ph: image_v,label_batch_ph: image_v})
         if (i % 100 == 0):
             print("i: %d loss: %f" % (i,loss_v))
-        if (i!= 0 and i % 1000 == 0):
+        if (i!= 0 and i % 5000 == 0):
             # uf.display_image(np.hstack((image_v, infer_v)))
             uf.save_image(np.hstack((image_v, infer_v)), loss_v)
 

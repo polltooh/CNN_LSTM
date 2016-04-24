@@ -30,16 +30,16 @@ def _add_leaky_relu(hl_tensor, leaky_param):
 def inference1(data):
     data_shape_l = data.get_shape().as_list()
     with tf.variable_scope('conv1') as scope:
-        weights = _variable_with_weight_decay('weights', shape=[3, 3, 3, 64],
+        weights = _variable_with_weight_decay('weights', shape=[5, 5, 3, 128],
                                            stddev=1e-4, wd=0.0)
-        biases = _variable_on_cpu('biases', [64], tf.constant_initializer(0.0))
+        biases = _variable_on_cpu('biases', [128], tf.constant_initializer(0.0))
         h_conv1 = _conv2d(data, weights, biases, [1,1,1,1])
         pool1 = tf.nn.max_pool(h_conv1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1],
                            padding='SAME', name='pool1')
       
     with tf.variable_scope('deconv1') as scope:
         unpool1 = _unpooling(pool1, data_shape_l)
-        weights = _variable_with_weight_decay('weights', shape=[3, 3, 3, 64],
+        weights = _variable_with_weight_decay('weights', shape=[5, 5, 3, 128],
                                            stddev=1e-4, wd=0.0)
         biases = _variable_on_cpu('biases', [3], tf.constant_initializer(0.0))
         output_shape = tf.pack(data_shape_l)
