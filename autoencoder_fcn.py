@@ -15,8 +15,8 @@ tf.app.flags.DEFINE_float('init_learning_rate',0.1,
 tf.app.flags.DEFINE_string('model_dir', 'model_logs','''directory where to save the model''')
 
 
-IMG_ROW = 128
-IMG_COL = 128
+IMG_ROW = 256
+IMG_COL = 256
 
 
 def batching(input_tensor, batch_size):
