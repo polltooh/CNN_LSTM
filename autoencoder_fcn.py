@@ -14,13 +14,13 @@ tf.app.flags.DEFINE_float('init_learning_rate',0.1,
         '''initial learning rate''')
 tf.app.flags.DEFINE_string('model_dir', 'model_logs','''directory where to save the model''')
 
-
 IMG_ROW = 256
 IMG_COL = 256
-
+NUM_THREAD = 5
 
 def batching(input_tensor, batch_size):
-    return tf.train.batch([input_tensor], batch_size=batch_size)
+    return tf.train.batch([input_tensor], batch_size=batch_size, num_threads = NUM_THREAD,
+            capacity = 100)
 
 def train():
     image_name = tf.constant("lily.jpg", tf.string)
@@ -39,6 +39,13 @@ def train():
     loss = nt.loss1(infer, label_batch_ph)
     train_op = nt.training1(loss,FLAGS.init_learning_rate, global_step)
 
+    for var in tf.trainable_variables():
+        tf.histogram_summary(var.op.name, var)
+
+    merged_sum =tf.merge_all_summaries()
+
+    writer_sum = tf.train.SummaryWriter(FLAGS.train_log_dir)
+
     sess = tf.Session()
     
     init_op = tf.initialize_all_variables()
@@ -48,12 +55,15 @@ def train():
     threads = tf.train.start_queue_runners(coord = coord, sess = sess)
     for i in xrange(FLAGS.max_training_iter):
         image_v = sess.run(batch_image)
-        infer_v, loss_v, _ = sess.run([infer, loss, train_op], feed_dict = {image_batch_ph: image_v,label_batch_ph: image_v})
+        infer_v, loss_v, _= sess.run([infer, loss, train_op], 
+                feed_dict = {image_batch_ph: image_v,label_batch_ph: image_v})
         if (i % 100 == 0):
+            merged_sum_v = sess.run(merged_sum)
+            writer_sum.add_summary(merged_sum_v, i)
             print("i: %d loss: %f" % (i,loss_v))
-        if (i!= 0 and i % 5000 == 0):
-            # uf.display_image(np.hstack((image_v, infer_v)))
-            uf.save_image(np.hstack((image_v, infer_v)), loss_v)
+        if (i!= 0 and i % 1000 == 0):
+            uf.display_image(np.hstack((image_v, infer_v)))
+            # uf.save_image(np.hstack((image_v, infer_v)), loss_v)
 
     coord.request_stop()
     coord.join(threads)
