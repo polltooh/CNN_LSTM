@@ -61,9 +61,12 @@ def train():
             merged_sum_v = sess.run(merged_sum)
             writer_sum.add_summary(merged_sum_v, i)
             print("i: %d loss: %f" % (i,loss_v))
-        if (i!= 0 and i % 1000 == 0):
-            uf.display_image(np.hstack((image_v, infer_v)))
-            # uf.save_image(np.hstack((image_v, infer_v)), loss_v)
+        if (i % 100 == 0):
+            # uf.display_image(np.hstack((image_v, infer_v)))
+			uf.save_image(np.hstack((image_v, infer_v)), loss_v)
+        # if (i!= 0 and i % 1000 == 0):
+        #     # uf.display_image(np.hstack((image_v, infer_v)))
+        #     uf.save_image(np.hstack((image_v, infer_v)), loss_v)
 
     coord.request_stop()
     coord.join(threads)
