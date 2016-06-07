@@ -15,7 +15,7 @@ tf.app.flags.DEFINE_string('train_log_dir','logs','''directory wherer to write e
 tf.app.flags.DEFINE_string('batch_size',1,'''batch size''')
 tf.app.flags.DEFINE_integer('max_training_iter', 1000,
         '''the max number of training iteration''')
-tf.app.flags.DEFINE_float('init_learning_rate',0.1,
+tf.app.flags.DEFINE_float('init_learning_rate',0.001,
         '''initial learning rate''')
 tf.app.flags.DEFINE_string('model_dir', 'model_logs','''directory where to save the model''')
 
@@ -60,11 +60,11 @@ def train():
 
 	con_cat_out = tf.concat(0, outputs)
 	con_cat_label = tf.concat(0, labels_ph)
-	infer = nt.inference(con_cat_out, CELL_DIM, LABEL_DIM)	
+	infer = nt.inference2(con_cat_out, CELL_DIM, LABEL_DIM)	
 	loss = nt.loss2(infer, con_cat_label)
 
 	global_step = tf.Variable(0, name = 'global_step', trainable = False)
-	train_op = nt.training(loss, FLAGS.init_learning_rate, global_step = global_step)
+	train_op = nt.training1(loss, FLAGS.init_learning_rate, global_step = global_step)
 
 	sess = tf.Session()
 

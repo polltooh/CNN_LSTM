@@ -6,10 +6,9 @@ def _variable_on_cpu(name, shape, initializer):
     var = tf.get_variable(name, shape, initializer=initializer)
   return var
 
-def _variable_with_weight_decay(name, shape, stddev, wd):
-  var = _variable_on_cpu(name, shape,
-                         tf.truncated_normal_initializer(stddev=stddev))
-  if wd:
+def _variable_with_weight_decay(name, shape, wd):
+  var = _variable_on_cpu(name, shape, tf.contrib.layers.xavier_initializer())
+  if wd is not None:
     weight_decay = tf.mul(tf.nn.l2_loss(var), wd, name='weight_loss')
     tf.add_to_collection('losses', weight_decay)
   return var
@@ -30,27 +29,23 @@ def _add_leaky_relu(hl_tensor, leaky_param):
 def inference1(data):
     data_shape_l = data.get_shape().as_list()
     with tf.variable_scope('conv1') as scope:
-        weights = _variable_with_weight_decay('weights', shape=[3, 3, 3, 32],
-                                           stddev=1e-4, wd=0.0)
+        weights = _variable_with_weight_decay('weights', shape=[3, 3, 3, 32],wd=0.0)
         biases = _variable_on_cpu('biases', [32], tf.constant_initializer(0.0))
         h_conv1 = _conv2d(data, weights, biases, [1,2,2,1])
       
     with tf.variable_scope('conv2') as scope:
-        weights = _variable_with_weight_decay('weights', shape=[3, 3, 32, 32],
-                                           stddev=1e-4, wd=0.0)
+        weights = _variable_with_weight_decay('weights', shape=[3, 3, 32, 32],wd=0.0)
         biases = _variable_on_cpu('biases', [32], tf.constant_initializer(0.0))
         h_conv2 = _conv2d(h_conv1, weights, biases, [1,1,1,1])
 
     with tf.variable_scope('deconv1') as scope:
-        weights = _variable_with_weight_decay('weights', shape=[3, 3, 32, 32],
-                                           stddev=1e-4, wd=0.0)
+        weights = _variable_with_weight_decay('weights', shape=[3, 3, 32, 32],wd=0.0)
         biases = _variable_on_cpu('biases', [32], tf.constant_initializer(0.0))
         output_shape = tf.pack(h_conv1.get_shape().as_list())
         h_dconv1 = _dconv2d(h_conv2, weights, biases, output_shape, [1,1,1,1])
 
     with tf.variable_scope('deconv2') as scope:
-        weights = _variable_with_weight_decay('weights', shape=[3, 3, 3, 32],
-                                           stddev=1e-4, wd=0.0)
+        weights = _variable_with_weight_decay('weights', shape=[3, 3, 3, 32],wd=0.0)
         biases = _variable_on_cpu('biases', [3], tf.constant_initializer(0.0))
         output_shape = tf.pack(data_shape_l)
         h_dconv2 = _dconv2d(h_dconv1, weights, biases, output_shape, [1,2,2,1])
@@ -64,10 +59,13 @@ def inference1(data):
     return h_dconv2
 
 
-def inference2():
-    """for rnn"""
-    pass
-
+def inference2(feature, feature_dim, label_dim, keep_prob = 1.0):
+	feature_drop = tf.nn.dropout(feature,keep_prob)	
+	with tf.variable_scope("fc") as scope:
+		weights = _variable_with_weight_decay("weight", [feature_dim, label_dim], 0.001)
+		biases = _variable_on_cpu("biases", [label_dim], tf.constant_initializer(0.0))
+		fc = tf.nn.bias_add(tf.matmul(feature_drop, weights), biases)
+	return fc
 
 def loss1(infer, labels):
     l2_norm_loss = tf.reduce_mean(tf.square(infer - labels))
