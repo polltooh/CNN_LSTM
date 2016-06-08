@@ -32,3 +32,11 @@ def save_image(image_v, loss):
 	# return
 	cv2.imwrite(filename, save_image_v)
 	cv2.imwrite("aaa.jpg", I)
+
+def define_graph_config(fraction):
+	"""Define the GPU usage"""
+	config_proto =  tf.ConfigProto()
+	config_proto.gpu_options.per_process_gpu_memory_fraction = fraction
+	config_proto.allow_soft_placement=False
+	config_proto.log_device_placement=False
+	return config_proto

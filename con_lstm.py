@@ -75,7 +75,7 @@ class con_lstm_cell():
 
 		return output, state
 
-	def get_zero_state(self, batch_size, input_h, input_w, cell_c):
+	def get_zero_state(self, batch_size, input_h, input_w, cell_c, dtype = tf.float32):
 		return tf.zeros((batch_size, input_h, input_w, cell_c), dtype = tf.float32)
 
 def clstm_encode(cell, inputs, state = None, scope = None):
@@ -98,26 +98,46 @@ def clstm_encode(cell, inputs, state = None, scope = None):
 
 	return outputs, state
 
-def clstm_decode(decoder_inputs, initial_state, cell, loop_function = None, scope = None):
+def clstm_decode(decoder_inputs, initial_state, cell, loop_time = -1,
+					loop_function = None, scope = None):
 	""" Convolutional LSTM decoding
 
 	Args:
 		decoder_inputs
 		initial_state
 		cell
+		loop_time
 		loop_function
 		scope
 
 	"""
-	with variable_scope.variable_scope(scope or "clstm_decoder"):
-		for i, inp in enumerate(decoder_inputs):
-			if loop_function is not None and prev is not None:
-				with variable_scope.variable_scope("loop_function", reuse=True):
-					inp = loop_function(prev, i)
-			if i > 0:
-				variable_scope.get_variable_scope().reuse_variables()
-			output, state = clstm_encode(cell, inp, state)
-			outputs.append(output)
-			if loop_function is not None:
-				prev = output
+	with tf.variable_scope(scope or "clstm_decoder"):
+		outputs = list()
+		state = initial_state		
+		if loop_time != -1:
+			inp = decoder_inputs
+			for i in xrange(loop_time):
+				if loop_function is not None and prev is not None:
+					with tf.variable_scope("loop_function", reuse = True):
+						inp = loop_function(pre, i)
+				if i > 0:
+					tf.get_variable_scope().reuse_variables()
+
+				output, state = clstm_encode(cell, [inp], state)
+				outputs.append(output[0])
+
+				if loop_function is not None:
+					prev = output
+
+		# else:
+		# 	for i, inp in enumerate(decoder_inputs):
+		# 		if loop_function is not None and prev is not None:
+		# 			with variable_scope.variable_scope("loop_function", reuse=True):
+		# 				inp = loop_function(prev, i)
+		# 		if i > 0:
+		# 			variable_scope.get_variable_scope().reuse_variables()
+		# 		output, state = clstm_encode(cell, inp, state)
+		# 		outputs.append(output)
+		# 		if loop_function is not None:
+		# 			prev = output
 	return outputs, state
