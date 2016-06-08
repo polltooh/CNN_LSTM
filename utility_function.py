@@ -1,8 +1,14 @@
 import tensorflow as tf
+# import PIL
+from PIL import Image
 import numpy as np
 import cv2
 from PIL import Image
 import os 
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+
+
 
 def read_image(image_name, feature_row, feature_col):
     image_bytes = tf.read_file(image_name)
@@ -19,6 +25,16 @@ def display_image(image_v):
     display_image_v[:,:,[2,0]] = display_image_v[:,:,[0,2]]
     cv2.imshow("image", display_image_v)
     cv2.waitKey(100)
+
+def display_image_pil(image_v):
+    """accept 3D or 4D numpy array. if the input is 4D, it will use the first one"""
+    display_image_v = image_v
+    if image_v.ndim == 4:
+        display_image_v = image_v[0]
+    # display_image_v[:,:,[2,0]] = display_image_v[:,:,[0,2]]
+    # imgplot = plt.imshow(display_image)
+    with Image.fromarray(np.uint8(display_image_v * 255)) as img:
+        img.show()
 
 def save_image(image_v, loss):
 	"""accept 3D or 4D numpy array. if the input is 4D, it will use the first one"""

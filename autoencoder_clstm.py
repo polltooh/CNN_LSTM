@@ -28,18 +28,18 @@ tf.app.flags.DEFINE_string('model_dir', 'auto_model_logs',
 		'''directory where to save the model''')
 
 # INPUT_DIM = 64 * 64
-INPUT_H = 64
-INPUT_W = 64
+INPUT_H = 256
+INPUT_W = 256
 INPUT_C = 3
-LABEL_C = 1
+LABEL_C = 3
 CELL_C = 32
 KSIZE = 5
 # LABEL_DIM = INPUT_DIM
 
-CELL_DIM = 1024
-CELL_LAYER = 1
+# CELL_DIM = 1024
+# CELL_LAYER = 1
 
-BATCH_SIZE = 10
+BATCH_SIZE = 5
 # UNROLLING_NUM = 10
 UNROLLING_NUM = 1
 
@@ -56,7 +56,7 @@ def train():
 	batch_image = tf.concat(0, image_list)
     # batch_image = batching(image, FLAGS.batch_size)
 
-	clstm_cell = clstm.con_lstm_cell(10, INPUT_H, INPUT_W, INPUT_C, KSIZE, CELL_C)
+	clstm_cell = clstm.con_lstm_cell(BATCH_SIZE, INPUT_H, INPUT_W, INPUT_C, KSIZE, CELL_C)
 	# single_cell = tf.nn.rnn_cell.BasicLSTMCell(CELL_DIM)
 	# multi_cell = tf.nn.rnn_cell.MultiRNNCell([single_cell] * CELL_LAYER)
 
@@ -138,7 +138,7 @@ def train():
 
 		feed_data[feed_previous_ph] = True
 		_, loss_v = sess.run([train_op, loss], feed_dict = feed_data)
-		if i % 100 == 0:
+		if i % 1 == 0:
 			# input_v = input_data_queue.get_next_batch_test(BATCH_SIZE, False, 4)
 			for j in range(UNROLLING_NUM):
 				# feed_data[inputs_ph[j]] = input_v[j]
@@ -147,9 +147,12 @@ def train():
 			
 				feed_data[inputs_ph[j]] = batch_image_v
 				feed_data[decodes1_ph[j]] = batch_image_v
-
+			
 			feed_data[feed_previous_ph] = True
-			test_loss_v = sess.run(loss, feed_dict = feed_data)
+			test_loss_v, infer_v = sess.run([loss, infer], feed_dict = feed_data)
+			dis_image = np.concatenate((batch_image_v[0], infer_v[0]), axis = 0)	
+			# dis_image = np.hstack((batch_image_v[0], con_cat_out[0]))
+			uf.display_image_pil(dis_image)
 			disp = "i:%d, train loss:%f, test loss:%f"%(i,loss_v, test_loss_v)
 			print(disp)
 
