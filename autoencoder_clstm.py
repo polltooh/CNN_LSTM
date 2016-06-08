@@ -30,7 +30,7 @@ tf.app.flags.DEFINE_string('model_dir', 'auto_model_logs',
 # INPUT_DIM = 64 * 64
 INPUT_H = 64
 INPUT_W = 64
-INPUT_C = 1
+INPUT_C = 3
 LABEL_C = 1
 CELL_C = 32
 KSIZE = 5
@@ -47,6 +47,15 @@ UNROLLING_NUM = 1
 def train():
 	input_data_queue = data_queue.DATA_QUEUE()
 	
+	image_name = tf.constant("lily.jpg", tf.string)
+	image = uf.read_image(image_name, INPUT_H, INPUT_W)
+	image_list = list()
+	for _ in range(BATCH_SIZE):
+		image_e = tf.expand_dims(image, 0)
+		image_list.append(image_e)
+	batch_image = tf.concat(0, image_list)
+    # batch_image = batching(image, FLAGS.batch_size)
+
 	clstm_cell = clstm.con_lstm_cell(10, INPUT_H, INPUT_W, INPUT_C, KSIZE, CELL_C)
 	# single_cell = tf.nn.rnn_cell.BasicLSTMCell(CELL_DIM)
 	# multi_cell = tf.nn.rnn_cell.MultiRNNCell([single_cell] * CELL_LAYER)
@@ -75,25 +84,25 @@ def train():
 	feed_previous_ph = tf.placeholder(tf.bool)
 	loss = []
 	loop_function = lambda x,y:x	
-	with tf.device('/gpu:%d' % 0):
-		_, state = clstm.clstm_encode(clstm_cell, inputs_ph, cell_initial_state)
-		outputs, state = clstm.clstm_decode(inputs_ph[-1], state, clstm_cell, UNROLLING_NUM)
-		# print(outputs)
-		con_cat_out = tf.concat(0, outputs)
-		# outputs,_ = mseq.no_embedding_one2many_rnn_seq2seq(inputs_ph, decoder_inputs_dict, 
-		# 		multi_cell, num_decoder_symbols_dict, feed_previous_ph)
-		# 	con_cat_out1 = tf.concat(0, outputs['reconstruction'])
-		# 	con_cat_out2 = tf.concat(0, outputs['prediction'])
+	# with tf.device('/gpu:%d' % 1):
+	_, state = clstm.clstm_encode(clstm_cell, inputs_ph, cell_initial_state)
+	outputs, state = clstm.clstm_decode(inputs_ph[-1], state, clstm_cell, UNROLLING_NUM)
+	# print(outputs)
+	con_cat_out = tf.concat(0, outputs)
+	# outputs,_ = mseq.no_embedding_one2many_rnn_seq2seq(inputs_ph, decoder_inputs_dict, 
+	# 		multi_cell, num_decoder_symbols_dict, feed_previous_ph)
+	# 	con_cat_out1 = tf.concat(0, outputs['reconstruction'])
+	# 	con_cat_out2 = tf.concat(0, outputs['prediction'])
 
-		infer = nt.inference3(con_cat_out, KSIZE, CELL_C, LABEL_C)
-		# con_cat_decodes2 = tf.concat(0, decodes2_ph)
-		# infer1 = nt.inference(con_cat_out1, CELL_DIM, LABEL_DIM, scope_name = "pred")	
-		# loss1 = nt.loss2(infer1, con_cat_decodes1)
-		# infer2 = nt.inference(con_cat_out2, CELL_DIM, LABEL_DIM, scope_name = "recon")	
-		# loss2 = nt.loss2(infer2, con_cat_decodes2)
-		# loss = loss1 + loss2
-		con_cat_decode1 = tf.concat(0, decodes1_ph)
-		loss = nt.loss1(infer, con_cat_decode1)
+	infer = nt.inference3(con_cat_out, KSIZE, CELL_C, LABEL_C)
+	# con_cat_decodes2 = tf.concat(0, decodes2_ph)
+	# infer1 = nt.inference(con_cat_out1, CELL_DIM, LABEL_DIM, scope_name = "pred")	
+	# loss1 = nt.loss2(infer1, con_cat_decodes1)
+	# infer2 = nt.inference(con_cat_out2, CELL_DIM, LABEL_DIM, scope_name = "recon")	
+	# loss2 = nt.loss2(infer2, con_cat_decodes2)
+	# loss = loss1 + loss2
+	con_cat_decode1 = tf.concat(0, decodes1_ph)
+	loss = nt.loss1(infer, con_cat_decode1)
 
 	saver = tf.train.Saver()
 	global_step = tf.Variable(0, name = 'global_step', trainable = False)
@@ -120,19 +129,25 @@ def train():
 	for i in xrange(FLAGS.max_training_iter):
 		feed_data = dict()
 		for j in xrange(UNROLLING_NUM):
-			input_v = input_data_queue.get_next_batch_train(BATCH_SIZE, False, 4)
-			# feed_data[inputs_ph[j]] = input_v[j,:,0:INPUT_DIM]
-			feed_data[inputs_ph[j]] = input_v[j]
-			feed_data[decodes1_ph[j]] = input_v[UNROLLING_NUM - j - 1]
-			# feed_data[decodes2_ph[j]] = input_v[10 + j,:,0:INPUT_DIM]
+			# input_v = input_data_queue.get_next_batch_train(BATCH_SIZE, False, 4)
+			# feed_data[inputs_ph[j]] = input_v[j]
+			# feed_data[decodes1_ph[j]] = input_v[UNROLLING_NUM - j - 1]
+			batch_image_v = sess.run(batch_image)
+			feed_data[inputs_ph[j]] = batch_image_v
+			feed_data[decodes1_ph[j]] = batch_image_v
+
 		feed_data[feed_previous_ph] = True
 		_, loss_v = sess.run([train_op, loss], feed_dict = feed_data)
 		if i % 100 == 0:
-			input_v = input_data_queue.get_next_batch_test(BATCH_SIZE, False, 4)
+			# input_v = input_data_queue.get_next_batch_test(BATCH_SIZE, False, 4)
 			for j in range(UNROLLING_NUM):
-				feed_data[inputs_ph[j]] = input_v[j]
-				feed_data[decodes1_ph[j]] = input_v[UNROLLING_NUM - j - 1]
+				# feed_data[inputs_ph[j]] = input_v[j]
+				# feed_data[decodes1_ph[j]] = input_v[UNROLLING_NUM - j - 1]
 				# feed_data[decodes2_ph[j]] = input_v[10 + j,:,0:INPUT_DIM]
+			
+				feed_data[inputs_ph[j]] = batch_image_v
+				feed_data[decodes1_ph[j]] = batch_image_v
+
 			feed_data[feed_previous_ph] = True
 			test_loss_v = sess.run(loss, feed_dict = feed_data)
 			disp = "i:%d, train loss:%f, test loss:%f"%(i,loss_v, test_loss_v)
