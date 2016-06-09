@@ -98,7 +98,7 @@ def clstm_encode(cell, inputs, state = None, scope = None):
 
 	return outputs, state
 
-def clstm_decode(decoder_inputs, initial_state, cell, loop_time = -1,
+def clstm_decode(decoder_inputs, initial_state, cell, loop_time,
 					loop_function = None, scope = None):
 	""" Convolutional LSTM decoding
 
@@ -114,20 +114,22 @@ def clstm_decode(decoder_inputs, initial_state, cell, loop_time = -1,
 	with tf.variable_scope(scope or "clstm_decoder"):
 		outputs = list()
 		state = initial_state		
-		if loop_time != -1:
-			inp = decoder_inputs
-			for i in xrange(loop_time):
-				if loop_function is not None and prev is not None:
-					with tf.variable_scope("loop_function", reuse = True):
-						inp = loop_function(pre, i)
-				if i > 0:
-					tf.get_variable_scope().reuse_variables()
+		inp = decoder_inputs[0]
+		for i in xrange(loop_time):
+			if loop_function is not None and prev is not None:
+				with tf.variable_scope("loop_function", reuse = True):
+					inp = loop_function(pre, i)
+			else:
+				inp = decoder_inputs[i]
 
-				output, state = clstm_encode(cell, [inp], state)
-				outputs.append(output[0])
+			if i > 0:
+				tf.get_variable_scope().reuse_variables()
 
-				if loop_function is not None:
-					prev = output
+			output, state = clstm_encode(cell, [inp], state)
+			outputs.append(output[0])
+
+			if loop_function is not None:
+				prev = output
 
 		# else:
 		# 	for i, inp in enumerate(decoder_inputs):

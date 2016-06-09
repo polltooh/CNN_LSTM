@@ -86,7 +86,7 @@ def train():
 	loop_function = lambda x,y:x	
 	# with tf.device('/gpu:%d' % 1):
 	_, state = clstm.clstm_encode(clstm_cell, inputs_ph, cell_initial_state)
-	outputs, state = clstm.clstm_decode(inputs_ph[-1], state, clstm_cell, UNROLLING_NUM)
+	outputs, state = clstm.clstm_decode([inputs_ph[-1]], state, clstm_cell, UNROLLING_NUM)
 	# print(outputs)
 	con_cat_out = tf.concat(0, outputs)
 	# outputs,_ = mseq.no_embedding_one2many_rnn_seq2seq(inputs_ph, decoder_inputs_dict, 
