@@ -138,22 +138,20 @@ def train():
 
 		feed_data[feed_previous_ph] = True
 		_, loss_v = sess.run([train_op, loss], feed_dict = feed_data)
-		if i % 1 == 0:
+		if i % 100 == 0:
 			# input_v = input_data_queue.get_next_batch_test(BATCH_SIZE, False, 4)
 			for j in range(UNROLLING_NUM):
 				# feed_data[inputs_ph[j]] = input_v[j]
 				# feed_data[decodes1_ph[j]] = input_v[UNROLLING_NUM - j - 1]
 				# feed_data[decodes2_ph[j]] = input_v[10 + j,:,0:INPUT_DIM]
-			
 				feed_data[inputs_ph[j]] = batch_image_v
 				feed_data[decodes1_ph[j]] = batch_image_v
 			
 			feed_data[feed_previous_ph] = True
 			test_loss_v, infer_v = sess.run([loss, infer], feed_dict = feed_data)
 			dis_image = np.concatenate((batch_image_v[0], infer_v[0]), axis = 0)	
-			# dis_image = np.hstack((batch_image_v[0], con_cat_out[0]))
-			uf.display_image_pil(dis_image)
-			disp = "i:%d, train loss:%f, test loss:%f"%(i,loss_v, test_loss_v)
+			uf.display_image(dis_image)
+			disp = "i:%d, train loss:%f, test loss:%f"%(i, loss_v, test_loss_v)
 			print(disp)
 
 		if i != 0 and i % 5000 == 0:

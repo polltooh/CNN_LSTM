@@ -26,16 +26,6 @@ def display_image(image_v):
     cv2.imshow("image", display_image_v)
     cv2.waitKey(100)
 
-def display_image_pil(image_v):
-    """accept 3D or 4D numpy array. if the input is 4D, it will use the first one"""
-    display_image_v = image_v
-    if image_v.ndim == 4:
-        display_image_v = image_v[0]
-    # display_image_v[:,:,[2,0]] = display_image_v[:,:,[0,2]]
-    # imgplot = plt.imshow(display_image)
-    with Image.fromarray(np.uint8(display_image_v * 255)) as img:
-        img.show()
-
 def save_image(image_v, loss):
 	"""accept 3D or 4D numpy array. if the input is 4D, it will use the first one"""
 	save_image_v = image_v
@@ -43,11 +33,12 @@ def save_image(image_v, loss):
 		save_image_v = save_image_v[0]
 	save_image_v[:,:,[2,0]] = save_image_v[:,:,[0,2]]
 	save_image_v *= 255
-	filename = "loss_%f.jpg" % (loss)
-	# np.save(filename, save_image_v)
-	# return
-	cv2.imwrite(filename, save_image_v)
-	cv2.imwrite("aaa.jpg", I)
+	# filename = "loss_%f.jpg" % (loss)
+	filename = "loss_%f.npy" % (loss)
+	np.save(filename, save_image_v)
+	return
+	# cv2.imwrite(filename, save_image_v)
+	# cv2.imwrite("aaa.jpg", I)
 
 def define_graph_config(fraction):
 	"""Define the GPU usage"""
