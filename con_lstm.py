@@ -2,6 +2,8 @@ import tensorflow as tf
 
 def _variable_on_cpu(name, shape, initializer = tf.contrib.layers.xavier_initializer_conv2d()):
   """Helper to create a Variable stored on CPU memory."""
+  # print("change init")
+  # var = tf.Variable(tf.truncated_normal(shape, 0, 0.001), name)
   with tf.device('/cpu:0'):
     var = tf.get_variable(name, shape, initializer=initializer)
   return var
@@ -86,15 +88,16 @@ def clstm_encode(cell, inputs, state = None, scope = None):
 		inputs: inputs
 		state:
 	"""
-	outputs = []
-	if state == None:
-		state = cell.zero_state
+	with tf.variable_scope("con_lstm") as scope:
+		outputs = []
+		if state == None:
+			state = cell.zero_state
 
-	for time, input_ in enumerate(inputs):
-		if time > 0: tf.get_variable_scope().reuse_variables()
-		call_cell = lambda:cell(input_, state)
-		output, state = call_cell()
-		outputs.append(output)
+		for time, input_ in enumerate(inputs):
+			if time > 0: tf.get_variable_scope().reuse_variables()
+		 	call_cell = lambda:cell(input_, state)
+		 	output, state = call_cell()
+		 	outputs.append(output)
 
 	return outputs, state
 

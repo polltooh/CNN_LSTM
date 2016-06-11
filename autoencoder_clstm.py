@@ -32,7 +32,7 @@ INPUT_H = 256
 INPUT_W = 256
 INPUT_C = 3
 LABEL_C = 3
-CELL_C = 32
+CELL_C = 128
 KSIZE = 5
 # LABEL_DIM = INPUT_DIM
 
@@ -52,7 +52,7 @@ def train():
 	image_list = list()
 	for _ in range(BATCH_SIZE):
 		image_e = tf.expand_dims(image, 0)
-		image_list.append(image_e)
+		image_list.append(image_e) 
 	batch_image = tf.concat(0, image_list)
     # batch_image = batching(image, FLAGS.batch_size)
 
