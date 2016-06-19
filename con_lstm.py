@@ -70,10 +70,9 @@ class con_lstm_cell():
 			forget_gate = tf.sigmoid(_conv2d(i, self.fx) + _conv2d(state, self.fh) + \
 						_conv2d(self.cell,self.fc) + self.fb)
 
-			self.cell = tf.mul(forget_gate, self.cell) + _conv2d(input_gate, 
+			self.cell = tf.mul(forget_gate, self.cell) + tf.mul(input_gate, 
 						tf.tanh(_conv2d(i, self.cx) + _conv2d(state, self.ch) + self.cb))
 			
-
 			output_gate = tf.sigmoid(_conv2d(i, self.ox) + _conv2d(state, self.oh) + \
 						_conv2d(self.cell, self.oc) + self.ob)
 
