@@ -24,35 +24,37 @@ class con_lstm_cell():
 			ksize: kernal size of the filter
 			cell_c: cell channel
 		"""
-		# Parameters:
-		# Input gate: input, previous output, and bias.
-		self.ix = _variable_on_cpu("ix", [ksize,ksize,input_c,cell_c])
-		self.ih = _variable_on_cpu("ih", [ksize,ksize,cell_c,cell_c])
-		self.ic = _variable_on_cpu("ic", [ksize,ksize,cell_c,cell_c])
-		self.ib = _variable_on_cpu("ib", [cell_c], tf.constant_initializer(0.0))
+		with tf.variable_scope("con_lstm") as scope:
+			# Parameters:
+			# Input gate: input, previous output, and bias.
+			self.ix = _variable_on_cpu("ix", [ksize,ksize,input_c,cell_c])
+			self.ih = _variable_on_cpu("ih", [ksize,ksize,cell_c,cell_c])
+			self.ic = _variable_on_cpu("ic", [ksize,ksize,cell_c,cell_c])
+			self.ib = _variable_on_cpu("ib", [cell_c], tf.constant_initializer(0.0))
 
-		# Forget gate: input, previous output, and bias.
-		self.fx = _variable_on_cpu("fx", [ksize, ksize,input_c,cell_c])
-		self.fh = _variable_on_cpu("fh", [ksize, ksize,cell_c,cell_c])
-		self.fc = _variable_on_cpu("fc", [ksize, ksize, cell_c, cell_c])
-		self.fb = _variable_on_cpu("fb", [cell_c], tf.constant_initializer(0.0))
+			# Forget gate: input, previous output, and bias.
+			self.fx = _variable_on_cpu("fx", [ksize, ksize,input_c,cell_c])
+			self.fh = _variable_on_cpu("fh", [ksize, ksize,cell_c,cell_c])
+			self.fc = _variable_on_cpu("fc", [ksize, ksize, cell_c, cell_c])
+			self.fb = _variable_on_cpu("fb", [cell_c], tf.constant_initializer(0.0))
 
-		# Memory cell: input, state and bias.                             
-		self.cx = _variable_on_cpu("cx", [ksize, ksize, input_c, cell_c])
-		self.ch = _variable_on_cpu("ch", [ksize, ksize, cell_c, cell_c])
-		self.cb = _variable_on_cpu("cb", [cell_c], tf.constant_initializer(0.0))
+			# Memory cell: input, state and bias.                             
+			self.cx = _variable_on_cpu("cx", [ksize, ksize, input_c, cell_c])
+			self.ch = _variable_on_cpu("ch", [ksize, ksize, cell_c, cell_c])
+			self.cb = _variable_on_cpu("cb", [cell_c], tf.constant_initializer(0.0))
 
-		# Output gate: input, previous output, and bias.
-		self.ox = _variable_on_cpu("ox", [ksize, ksize, input_c, cell_c])
-		self.oh = _variable_on_cpu("oh", [ksize, ksize, cell_c, cell_c])
-		self.oc = _variable_on_cpu("oc", [ksize, ksize, cell_c, cell_c])
-		self.ob = _variable_on_cpu("ob", [cell_c], tf.constant_initializer(0.0))
+			# Output gate: input, previous output, and bias.
+			self.ox = _variable_on_cpu("ox", [ksize, ksize, input_c, cell_c])
+			self.oh = _variable_on_cpu("oh", [ksize, ksize, cell_c, cell_c])
+			self.oc = _variable_on_cpu("oc", [ksize, ksize, cell_c, cell_c])
+			self.ob = _variable_on_cpu("ob", [cell_c], tf.constant_initializer(0.0))
 
-		# memory cell
-		self.cell = tf.Variable(tf.zeros([batch_size, input_w, input_h, cell_c]), trainable=False)
+			# memory cell
+			self.cell = tf.Variable(tf.zeros([batch_size, input_w, input_h, cell_c]), 
+							trainable=False)
 
-		#initial statte
-		self.zero_state = self.get_zero_state(batch_size, input_h, input_w, cell_c)
+			#initial statte
+			self.zero_state = self.get_zero_state(batch_size, input_h, input_w, cell_c)
 
 	def __call__(self, i, state):
 		""" Convolutional LSTM
@@ -61,19 +63,21 @@ class con_lstm_cell():
 			i: input
 			state:
 		"""
-		input_gate = tf.sigmoid(_conv2d(i, self.ix) + _conv2d(state, self.ih) + \
-					_conv2d(self.cell, self.ic) + self.ib)
+		with tf.name_scope("con_lstm") as scope:
+			input_gate = tf.sigmoid(_conv2d(i, self.ix) + _conv2d(state, self.ih) + \
+						_conv2d(self.cell, self.ic) + self.ib)
 
-		forget_gate = tf.sigmoid(_conv2d(i, self.fx) + _conv2d(state, self.fh) + \
-					_conv2d(self.cell,self.fc) + self.fb)
+			forget_gate = tf.sigmoid(_conv2d(i, self.fx) + _conv2d(state, self.fh) + \
+						_conv2d(self.cell,self.fc) + self.fb)
 
-		self.cell = tf.mul(forget_gate, self.cell) + tf.tanh(_conv2d(i, self.cx) + \
-					_conv2d(state, self.ch) + self.cb)
+			self.cell = tf.mul(forget_gate, self.cell) + _conv2d(input_gate, 
+						tf.tanh(_conv2d(i, self.cx) + _conv2d(state, self.ch) + self.cb))
+			
 
-		output_gate = tf.sigmoid(_conv2d(i, self.ox) + _conv2d(state, self.oh) + \
-					_conv2d(self.cell, self.oc) + self.ob)
+			output_gate = tf.sigmoid(_conv2d(i, self.ox) + _conv2d(state, self.oh) + \
+						_conv2d(self.cell, self.oc) + self.ob)
 
-		output = tf.mul(output_gate, tf.tanh(self.cell))
+			output = tf.mul(output_gate, tf.tanh(self.cell))
 
 		return output, state
 
