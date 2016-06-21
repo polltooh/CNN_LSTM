@@ -25,6 +25,13 @@ class con_lstm_cell():
 			cell_c: cell channel
 		"""
 		with tf.variable_scope("con_lstm") as scope:
+			self.params = dict()
+			self.params["input_h"] = input_h
+			self.params["input_w"] = input_w
+			self.params["input_c"] = input_c
+			self.params["ksize"] = ksize
+			self.params["cell_c"] = cell_c
+
 			# Parameters:
 			# Input gate: input, previous output, and bias.
 			self.ix = _variable_on_cpu("ix", [ksize,ksize,input_c,cell_c])
@@ -91,7 +98,7 @@ def clstm_encode(cell, inputs, state = None, scope = None):
 		inputs: inputs
 		state:
 	"""
-	with tf.variable_scope("con_lstm") as scope:
+	with tf.variable_scope(scope or "con_lstm") as scope:
 		outputs = []
 		if state == None:
 			state = cell.zero_state
@@ -117,25 +124,31 @@ def clstm_decode(decoder_inputs, initial_state, cell, loop_time,
 		scope
 
 	"""
-	with tf.variable_scope(scope or "clstm_decoder"):
+	with tf.variable_scope(scope or "clstm_decoder") as scope:
+		prev = None
 		outputs = list()
 		state = initial_state		
 		inp = decoder_inputs[0]
+		params = cell.params		
+		weights = _variable_on_cpu("weights", [params["ksize"], 
+					params["ksize"], params["cell_c"], params["input_c"]])
+
+		biases = _variable_on_cpu('biases', [1], tf.constant_initializer(0.0))
+
 		for i in xrange(loop_time):
 			if loop_function is not None and prev is not None:
 				with tf.variable_scope("loop_function", reuse = True):
-					inp = loop_function(pre, i)
+					inp = loop_function(prev, i, weights, biases)
 			else:
 				inp = decoder_inputs[i]
 
 			if i > 0:
 				tf.get_variable_scope().reuse_variables()
-
 			output, state = clstm_encode(cell, [inp], state)
 			outputs.append(output[0])
 
 			if loop_function is not None:
-				prev = output
+				prev = output[0]
 
 		# else:
 		# 	for i, inp in enumerate(decoder_inputs):

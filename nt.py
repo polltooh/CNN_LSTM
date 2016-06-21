@@ -79,10 +79,12 @@ def inference3(feature, ksize, cell_c, label_c, keep_prob = 1.0):
 		cn1 = _conv2d(feature, weights, biases)
 	return cn1
 
-def loss1(infer, labels):
-    l2_norm_loss = tf.reduce_mean(tf.square(infer - labels))
-    tf.add_to_collection('losses', l2_norm_loss)
-    return tf.add_n(tf.get_collection('losses'), name = 'total_loss')
+def loss1(infer, labels, scope = None):
+	with tf.name_scope(scope or "l2_loss") as scope:
+		l2_norm_loss = tf.reduce_mean(tf.square(infer - labels))
+		tf.add_to_collection('losses', l2_norm_loss)
+
+	return tf.add_n(tf.get_collection('losses'), name = 'total_loss')
 
 def loss2(classify_res, labels):
     cross_entropy = tf.nn.softmax_cross_entropy_with_logits(classify_res,labels,name='xentropy')

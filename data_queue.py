@@ -4,7 +4,11 @@ import cv2
 
 class DATA_QUEUE():
 	def __init__(self):
+		""" data shape:
+			[20, 10000, 64, 64]: 
+		"""
 		self.data = np.load("mnist_test_seq.npy")
+
 		print("after loading the data")
 		# self.data = np.load("temp.npy")
 		train_data_num = int(self.data.shape[1] * 0.7)
@@ -20,6 +24,11 @@ class DATA_QUEUE():
 		self.test_data_num = self.test_data.shape[1]
 
 	def get_next_batch_train(self, batch_size, reshape = True, expand_dim = -1):
+		""" 
+		return: 
+			if reshape == false and expand_dim = 4
+				[20,batch_size, 64, 64, 1]
+		"""
 		end_index = self.train_start_index + batch_size
 		batch_shape = list(self.data.shape)
 		batch_shape[1] = batch_size
