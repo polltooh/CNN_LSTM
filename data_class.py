@@ -1,11 +1,17 @@
 import tensorflow as tf
 
 class DataClass():
+	""" DataClass:
+		used for decode line
+	"""
 	def __init__(self, data_format):
 		self.data_format = data_format
 		self.decode_class = None
 
 class BINClass():
+	""" 
+		used for load binary file
+	"""
 	def __init__(self):
 		self.decode_fun = tf.decode_raw	
 		self.dtype = None
@@ -19,6 +25,9 @@ class BINClass():
 		return bin_tensor	
 
 class ImageClass():
+	""" 
+		used for load image file
+	"""
 	def __init__(self, shape, channels = None, ratio = None, name = None):
 		self.channels = channels
 		self.ratio = ratio
@@ -34,11 +43,17 @@ class ImageClass():
 		return image_tensor
 		
 class JPGClass(ImageClass):
+	""" 
+		used for load jpg image file
+	"""
 	def __init__(self, shape, channels = None, ratio = None, name = None):
 		ImageClass.__init__(self, shape, channels, ratio, name)
 		self.decode_fun = tf.image.decode_jpeg
 		
 class PNGClass(ImageClass):
+	""" 
+		used for load png image file
+	"""
 	def __init__(self, shape, channels = None, ratio = None, name = None):
 		ImageClass.__init__(self, shape, channels, ratio, name)
 		self.decode_fun = tf.image.decode_png
