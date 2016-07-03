@@ -1,4 +1,19 @@
 import tensorflow as tf
+import copy
+
+def crate_list_object(Object, count):
+	""" 
+	create a list of obejct using deep copy in 
+	cased used in different theads
+
+	Args:
+		Object: object to be copied
+		count: the number of copies
+	Return:
+		a list of objects
+	"""
+	return [copy.deepcopy(Object) for _ in xrange(count)]
+	
 
 class DataClass():
 	""" DataClass:
