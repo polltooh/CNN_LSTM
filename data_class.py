@@ -1,11 +1,32 @@
 import tensorflow as tf
+import copy
+
+def crate_list_object(Object, count):
+	""" 
+	create a list of obejct using deep copy in 
+	cased used in different theads
+
+	Args:
+		Object: object to be copied
+		count: the number of copies
+	Return:
+		a list of objects
+	"""
+	return [copy.deepcopy(Object) for _ in xrange(count)]
+	
 
 class DataClass():
+	""" DataClass:
+		used for decode line
+	"""
 	def __init__(self, data_format):
 		self.data_format = data_format
 		self.decode_class = None
 
 class BINClass():
+	""" 
+		used for load binary file
+	"""
 	def __init__(self):
 		self.decode_fun = tf.decode_raw	
 		self.dtype = None
@@ -71,9 +92,15 @@ class ImageClass():
 class JPGClass(ImageClass):
 	def __init__(self, shape, channels = None, off_set = None, ratio = None, name = None):
 		ImageClass.__init__(self, shape, channels, off_set, ratio, name)
+	""" 
+		used for load jpg image file
+	"""
 		self.decode_fun = tf.image.decode_jpeg
 		
 class PNGClass(ImageClass):
+	""" 
+		used for load png image file
+	"""
 	def __init__(self, shape, channels = None, ratio = None, name = None):
 		ImageClass.__init__(self, shape, channels, ratio, name)
 		self.decode_fun = tf.image.decode_png
