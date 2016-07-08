@@ -92,9 +92,9 @@ class ImageClass():
 class JPGClass(ImageClass):
 	def __init__(self, shape, channels = None, off_set = None, ratio = None, name = None):
 		ImageClass.__init__(self, shape, channels, off_set, ratio, name)
-	""" 
-		used for load jpg image file
-	"""
+		""" 
+			used for load jpg image file
+		"""
 		self.decode_fun = tf.image.decode_jpeg
 		
 class PNGClass(ImageClass):
