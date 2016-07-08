@@ -11,7 +11,8 @@ class BINClass():
 		self.dtype = None
 		self.shape = [0]
 
-	def decode(self, filename):
+	def decode(self, filename, is_train = None):
+		"""is_train not used"""
 		bin_file = tf.read_file(filename)
 		bin_tensor = tf.decode_raw(bin_file, self.dtype)
 		bin_tensor = tf.to_float(bin_tensor)
@@ -19,23 +20,57 @@ class BINClass():
 		return bin_tensor	
 
 class ImageClass():
-	def __init__(self, shape, channels = None, ratio = None, name = None):
+	def __init__(self, shape, channels, offset, ratio = None, name = None):
+		"""offset: the difference between cropped image and orginal image 
+			final shape will be shape
+		"""
 		self.channels = channels
 		self.ratio = ratio
 		self.name = name
 		self.shape = shape
+		self.offset = offset
 		self.decode_fun = None
 
-	def decode(self, filename):
+	def decode(self, filename, is_train, whiten = True):
+		"""is_train distort the iamge"""
 		image_tensor = tf.read_file(filename)
 		image_tensor = self.decode_fun(image_tensor, channels = self.channels, ratio = self.ratio)
 		image_tensor = tf.image.convert_image_dtype(image_tensor, tf.float32)
-		image_tensor = tf.image.resize_images(image_tensor, self.shape[0], self.shape[1])
-		return image_tensor
+		image_tensor = tf.image.resize_images(image_tensor, 
+						self.shape[0] + self.offset, self.shape[1] + self.offset)
+		if is_train:
+			image_tensor = self.distort_op(image_tensor)
+			# tf.image_summary('image_tensor', tf.expand_dims(image_tensor, 0))
+		else:
+			image_tensor = tf.image.resize_image_with_crop_or_pad(image_tensor,
+											self.shape[0], self.shape[1])
+		if whiten:
+			# Subtract off the mean and divide by the variance of the pixels.
+			image_tensor = tf.image.per_image_whitening(image_tensor)
 		
+		return image_tensor
+
+	def distort_op(self, image_tensor):
+		""" copied from tensorflow cifar10 tutorial"""
+		# Randomly crop a [height, width] section of the image.
+		distorted_image = tf.random_crop(image_tensor, [self.shape[0],self.shape[1], 3])
+
+		# Randomly flip the image horizontally.
+		distorted_image = tf.image.random_flip_left_right(distorted_image)
+
+		# Because these operations are not commutative, consider randomizing
+		# the order their operation.
+		distorted_image = tf.image.random_brightness(distorted_image,
+											   max_delta=63)
+		distorted_image = tf.image.random_contrast(distorted_image,
+											 lower=0.2, upper=1.8)
+	
+		return distorted_image
+
+
 class JPGClass(ImageClass):
-	def __init__(self, shape, channels = None, ratio = None, name = None):
-		ImageClass.__init__(self, shape, channels, ratio, name)
+	def __init__(self, shape, channels = None, off_set = None, ratio = None, name = None):
+		ImageClass.__init__(self, shape, channels, off_set, ratio, name)
 		self.decode_fun = tf.image.decode_jpeg
 		
 class PNGClass(ImageClass):
