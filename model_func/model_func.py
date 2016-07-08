@@ -60,7 +60,7 @@ def _add_leaky_relu(hl_tensor, leaky_param):
 		Args:
 			leaky_params should be from 0.01 to 0.1
 	"""
-    return tf.maximum(hl_tensor, tf.mul(leaky_param, hl_tensor))
+	return tf.maximum(hl_tensor, tf.mul(leaky_param, hl_tensor))
 
 def _max_pool(x, ksize, strides, name):
 	""" 2d pool layer"""
@@ -101,7 +101,7 @@ def _batch_norm(inputs, decay = 0.999, center = True, scale = False, epsilon = 0
 		Returns:
 			a tensor representing the output of the operation.
 	"""
-	inputs_shape = inputs.get_shape)_
+	inputs_shape = inputs.get_shape()
 	with tf.variable_op_scope([inputs], scope, 'BatchNorm', reuse = reuse):
 		axis = list(range(len(inputs_shape) - 1))
 		params_shape = inputs_shape[-1:]
@@ -113,21 +113,21 @@ def _batch_norm(inputs, decay = 0.999, center = True, scale = False, epsilon = 0
 			gamma = _variable_on_cpu('gamma', params_shape, tf.ones_initializer)
 
 		moving_collections = [moving_vars, tf.GraphKeys.MOVING_AVERAGE_VARIABLES]
-		moving_mean = _variable_on_cpu('moving_mean', params_shape,tf.zeros_initializer, trainabel = False)
-		moving_variance = _vairable_on_cpu('moving_variance', params_shape, tf.ones_initializer, trainabel = False)
+		moving_mean = _variable_on_cpu('moving_mean', params_shape,tf.zeros_initializer, trainable = False)
+		moving_variance = _variable_on_cpu('moving_variance', params_shape, tf.ones_initializer, trainable = False)
 		if is_training:
-			mean, variable = tf.nn.moments(inputs, axis)
-			update_moving_mean = moving_averages.assign_mibing_average(moving_mean, mean, decay)
-			tf.add_to_collection(UPDATE_OPS_COLLECTION, update_moving_mean)
+			mean, variance = tf.nn.moments(inputs, axis)
+			update_moving_mean = moving_averages.assign_moving_average(moving_mean, mean, decay)
+			tf.add_to_collection('_update_ops__', update_moving_mean)
 			update_moving_variance = moving_averages.assign_moving_average(moving_variance, variance, decay)
-			tf.add_to_collection(UPDATE_OPS_COLLECTION, update_moving_variance)
+			tf.add_to_collection('__update_ops__', update_moving_variance)
 		else:
 			mean = moving_mean
 			vairance = moving_variance
 
-		outputs = tf.nn.batch_normalization(inputs, mean, vairance, beta, gamma, epsilon)
+		outputs = tf.nn.batch_normalization(inputs, mean, variance, beta, gamma, epsilon)
 
-		outpus.set_shape(inputs.get_shape()) 
+		outputs.set_shape(inputs.get_shape()) 
 
 		if activation:
 			outputs = activation(outputs)
