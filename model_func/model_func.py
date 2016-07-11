@@ -42,8 +42,8 @@ def _variable_with_weight_decay(name, shape, wd = 0.0):
 def _conv2d(x, w, strides = [1,1,1,1]):
     return tf.nn.conv2d(x, w,strides=strides, padding = 'SAME')
 
-def _conv3d(x, w, strides = [1,1,1,1,1]):
-    return tf.nn.conv3d(x, w,strides=strides, padding = 'SAME')
+def _conv3d(x, w, strides = [1,1,1,1,1], padding = 'SAME'):
+    return tf.nn.conv3d(x, w,strides=strides, padding = padding)
 	
 def add_leaky_relu(hl_tensor, leaky_param):
     return tf.maximum(hl_tensor, tf.mul(leaky_param, hl_tensor))
@@ -72,6 +72,12 @@ def _max_pool3(x, ksize, strides, name):
 	""" 3d pool layer"""
 	pool = tf.nn.max_pool3d(x, ksize=ksize, strides= strides,
 		padding='VALID', name = name)
+	return pool
+
+def _avg_pool3(x, ksize, strides, name):
+	""" 3d average pool layer """
+	pool = tf.nn.avg_pool3d(x, ksize = ksize, strides = strides,
+		padding = 'VALID', name = name)
 	return pool
 
 def _batch_norm(inputs, decay = 0.999, center = True, scale = False, epsilon = 0.001, 
