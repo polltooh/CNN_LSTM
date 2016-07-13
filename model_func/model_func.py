@@ -118,10 +118,13 @@ def _batch_norm(inputs, decay = 0.999, center = True, scale = False, epsilon = 0
 		if scale:
 			gamma = _variable_on_cpu('gamma', params_shape, tf.ones_initializer)
 
-		moving_collections = [moving_vars, tf.GraphKeys.MOVING_AVERAGE_VARIABLES]
+		# moving_collections = [moving_vars, tf.GraphKeys.MOVING_AVERAGE_VARIABLES]
 		moving_mean = _variable_on_cpu('moving_mean', params_shape,tf.zeros_initializer, trainable = False)
+		tf.add_to_collection(tf.GraphKeys.MOVING_AVERAGE_VARIABLES, moving_mean)
 		moving_variance = _variable_on_cpu('moving_variance', params_shape, tf.ones_initializer, trainable = False)
+		tf.add_to_collection(tf.GraphKeys.MOVING_AVERAGE_VARIABLES, moving_variance)
 		if is_training:
+
 			mean, variance = tf.nn.moments(inputs, axis)
 			update_moving_mean = moving_averages.assign_moving_average(moving_mean, mean, decay)
 			tf.add_to_collection('_update_ops__', update_moving_mean)
@@ -129,7 +132,7 @@ def _batch_norm(inputs, decay = 0.999, center = True, scale = False, epsilon = 0
 			tf.add_to_collection('__update_ops__', update_moving_variance)
 		else:
 			mean = moving_mean
-			vairance = moving_variance
+			variance = moving_variance
 
 		outputs = tf.nn.batch_normalization(inputs, mean, variance, beta, gamma, epsilon)
 
