@@ -24,12 +24,16 @@ def restore_model(sess, saver, model_dir, model_name = None):
 			print('no check point')
 	else:
 		print("restore " + model_name)
-		saver.restore(sess, FLAGS.model_dir + '/' + model_name)
+		saver.restore(sess, model_dir + '/' + model_name)
 	
-def save_model(sess, saver, model_dir):
+def save_model(sess, saver, model_dir, iteration):
 	""" save the current model"""
 
 	curr_time = time.strftime("%Y%m%d_%H%M")
-	model_name = FLAGS.model_dir + '/' + curr_time + \
-				'_iter_' + str(i) + '_model.ckpt'
+	model_name = model_dir + '/' + curr_time + \
+				'_iter_' + str(iteration) + '_model.ckpt'
 	saver.save(sess, model_name)
+
+def add_value_sum(summary_writer, value, name):
+	""" add python value to tensorboard """
+	return tf.Summary(value = [tf.Summary.Value(tag = name, simple_value = value)])	
