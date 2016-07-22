@@ -1,7 +1,7 @@
 import tensorflow as tf
 import copy
 
-def crate_list_object(Object, count):
+def create_list_object(Object, count):
 	""" 
 	create a list of obejct using deep copy in 
 	cased used in different theads
@@ -12,8 +12,10 @@ def crate_list_object(Object, count):
 	Return:
 		a list of objects
 	"""
-	return [copy.deepcopy(Object) for _ in xrange(count)]
-	
+	res_list = []
+	for _ in xrange(count):
+		res_list.append(Object)
+	return res_list	
 
 class DataClass():
 	""" DataClass:
@@ -27,18 +29,19 @@ class BINClass():
 	""" 
 		used for load binary file
 	"""
-	def __init__(self):
+	def __init__(self, shape, dtype = tf.float32):
+		""" shape: a list """
 		self.decode_fun = tf.decode_raw	
-		self.dtype = None
-		self.shape = [0]
+		self.dtype = dtype
+		self.shape = shape
 
-	def decode(self, filename, is_train = None):
-		"""is_train not used"""
+	def decode(self, filename, distort_data = False, whiten_data = False):
+		""" distort_data and whiten_data are not used """
 		bin_file = tf.read_file(filename)
 		bin_tensor = tf.decode_raw(bin_file, self.dtype)
 		bin_tensor = tf.to_float(bin_tensor)
-		bin_tensor = tf.reshape(bin_tensor, shape)
-		return bin_tensor	
+		bin_tensor = tf.reshape(bin_tensor, self.shape)
+		return bin_tensor
 
 class ImageClass():
 	def __init__(self, shape, channels, offset, ratio = None, name = None):
@@ -52,20 +55,21 @@ class ImageClass():
 		self.offset = offset
 		self.decode_fun = None
 
-	def decode(self, filename, is_train, whiten = True):
-		"""is_train distort the iamge"""
+	def decode(self, filename, distort_data, whiten_data = True):
+		"""distort: random distort the iamge"""
 		image_tensor = tf.read_file(filename)
 		image_tensor = self.decode_fun(image_tensor, channels = self.channels, ratio = self.ratio)
 		image_tensor = tf.image.convert_image_dtype(image_tensor, tf.float32)
 		image_tensor = tf.image.resize_images(image_tensor, 
 						self.shape[0] + self.offset, self.shape[1] + self.offset)
-		if is_train:
+		
+		if distort_data:
+			# it will crop in the function
 			image_tensor = self.distort_op(image_tensor)
-			# tf.image_summary('image_tensor', tf.expand_dims(image_tensor, 0))
 		else:
 			image_tensor = tf.image.resize_image_with_crop_or_pad(image_tensor,
 											self.shape[0], self.shape[1])
-		if whiten:
+		if whiten_data:
 			# Subtract off the mean and divide by the variance of the pixels.
 			image_tensor = tf.image.per_image_whitening(image_tensor)
 		
@@ -74,17 +78,17 @@ class ImageClass():
 	def distort_op(self, image_tensor):
 		""" copied from tensorflow cifar10 tutorial"""
 		# Randomly crop a [height, width] section of the image.
-		distorted_image = tf.random_crop(image_tensor, [self.shape[0],self.shape[1], 3])
+		distorted_image = tf.random_crop(image_tensor, [self.shape[0],self.shape[1], self.channels])
 
 		# Randomly flip the image horizontally.
 		distorted_image = tf.image.random_flip_left_right(distorted_image)
 
 		# Because these operations are not commutative, consider randomizing
 		# the order their operation.
-		distorted_image = tf.image.random_brightness(distorted_image,
-											   max_delta=63)
-		distorted_image = tf.image.random_contrast(distorted_image,
-											 lower=0.2, upper=1.8)
+		# distorted_image = tf.image.random_brightness(distorted_image,
+		# 									   max_delta=63)
+		# distorted_image = tf.image.random_contrast(distorted_image,
+		# 									 lower=0.2, upper=1.8)
 	
 		return distorted_image
 
@@ -101,7 +105,7 @@ class PNGClass(ImageClass):
 	""" 
 		used for load png image file
 	"""
-	def __init__(self, shape, channels = None, ratio = None, name = None):
-		ImageClass.__init__(self, shape, channels, ratio, name)
+	def __init__(self, shape, channels = None, off_set = None, ratio = None, name = None):
+		ImageClass.__init__(self, shape, channels, off_set, ratio, name)
 		self.decode_fun = tf.image.decode_png
 

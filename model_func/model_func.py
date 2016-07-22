@@ -1,6 +1,9 @@
 import tensorflow as tf
 from tensorflow.python.training import moving_averages
 
+
+FLAGS = tf.app.flags.FLAGS
+
 def _variable_on_cpu(name, shape, initializer, trainable = True):
 	"""Helper to create a Variable stored on CPU memory.
 	
@@ -81,7 +84,7 @@ def _avg_pool3(x, ksize, strides, name):
 	return pool
 
 def _batch_norm(inputs, decay = 0.999, center = True, scale = False, epsilon = 0.001, 
-				moving_vars = 'moving_vars', activation = None, is_training = True, 
+				moving_vars = 'moving_vars', activation = None, is_training = None, 
 				trainable = True, restore = True, scope = None, reuse = None):
 	""" Copied from slim/ops.py 
 		Adds a Batch Normalization layer. 
@@ -97,7 +100,7 @@ def _batch_norm(inputs, decay = 0.999, center = True, scale = False, epsilon = 0
 			epsilon: small float added to variance to avoid dividing by zero.
 			moving_vars: collection to store the moving_mean and moving_variance.
 			activation: activation function.
-			is_training: whether or not the model is in training mode.
+			is_training: a placeholder whether or not the model is in training mode.
 			trainable: whether or not the variables should be trainable or not.
 			restore: whether or not the variables should be marked for restore.
 			scope: Optional scope for variable_op_scope.
@@ -120,24 +123,26 @@ def _batch_norm(inputs, decay = 0.999, center = True, scale = False, epsilon = 0
 
 		# moving_collections = [moving_vars, tf.GraphKeys.MOVING_AVERAGE_VARIABLES]
 		moving_mean = _variable_on_cpu('moving_mean', params_shape,tf.zeros_initializer, trainable = False)
-		tf.add_to_collection(tf.GraphKeys.MOVING_AVERAGE_VARIABLES, moving_mean)
+		# tf.add_to_collection(tf.GraphKeys.MOVING_AVERAGE_VARIABLES, moving_mean)
 		moving_variance = _variable_on_cpu('moving_variance', params_shape, tf.ones_initializer, trainable = False)
-		tf.add_to_collection(tf.GraphKeys.MOVING_AVERAGE_VARIABLES, moving_variance)
-		if is_training:
-
+		# tf.add_to_collection(tf.GraphKeys.MOVING_AVERAGE_VARIABLES, moving_variance)
+		
+		def train_phase():
 			mean, variance = tf.nn.moments(inputs, axis)
 			update_moving_mean = moving_averages.assign_moving_average(moving_mean, mean, decay)
-			tf.add_to_collection('_update_ops__', update_moving_mean)
-			update_moving_variance = moving_averages.assign_moving_average(moving_variance, variance, decay)
-			tf.add_to_collection('__update_ops__', update_moving_variance)
-		else:
-			mean = moving_mean
-			variance = moving_variance
+			update_moving_variance = moving_averages.assign_moving_average(moving_variance, 
+									variance, decay)
+			with tf.control_dependencies([update_moving_mean, update_moving_variance]):
+				return tf.identity(mean), tf.identity(variance)
 
+		def test_phase():
+			return moving_mean, moving_variance	
+
+		mean, variance = tf.cond(is_training, train_phase, test_phase)
 		outputs = tf.nn.batch_normalization(inputs, mean, variance, beta, gamma, epsilon)
-
 		outputs.set_shape(inputs.get_shape()) 
 
 		if activation:
 			outputs = activation(outputs)
+
 		return outputs

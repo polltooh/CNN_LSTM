@@ -1,6 +1,9 @@
 import tensorflow as tf
 import time
 
+
+FLAGS = tf.app.flags.FLAGS
+
 def add_train_var():
 	""" add all trainable variable to summary"""
 	for var in tf.trainable_variables():
@@ -37,3 +40,19 @@ def save_model(sess, saver, model_dir, iteration):
 def add_value_sum(summary_writer, value, name):
 	""" add python value to tensorboard """
 	return tf.Summary(value = [tf.Summary.Value(tag = name, simple_value = value)])	
+
+def group_mv_ops(train_op, moving_average_decay, global_step):
+	""" group all the operations 
+	Args:
+	"""	
+	# batchnorm_updates = tf.get_collection(FLAGS.bn_collection)
+	variable_averages = tf.train.ExponentialMovingAverage(moving_average_decay, global_step)
+	# batchnorm_vars = tf.get_collection(tf.GraphKeys.MOVING_AVERAGE_VARIABLES)	
+	variables_to_average = tf.trainable_variables()
+							# batchnorm_vars)
+		
+	variables_averages_op = variable_averages.apply(variables_to_average)
+	# batchnorm_updates_op = tf.group(*batchnorm_updates)
+	all_op = tf.group(train_op, variables_averages_op)
+
+	return all_op

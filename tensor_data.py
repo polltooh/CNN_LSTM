@@ -22,13 +22,15 @@ def file_queue(file_name, shuffle_data):
 
 
 def file_queue_to_batch_data(filename_queue, data_classes, is_train, batch_size, 
-				whiten_data= True):
+				whiten_data = True, distort_data = True):
 	""" batch data
 	Args:
 		filename_queue: produced by file_queue
 		data_classes: list of DataClass
 		is_train: True or False
 		batch_size: batch size
+		whiten_data: apply image whitening to the image
+		distort_data: apply random cropping and fliping 
 	"""
 
 	data_classes = check_list(data_classes)
@@ -42,7 +44,8 @@ def file_queue_to_batch_data(filename_queue, data_classes, is_train, batch_size,
 	tensor_list = list()
 	for i in xrange(len(data_classes)):
 		if (data_classes[i].decode_class is not None):
-			tensor_list.append(data_classes[i].decode_class.decode(data_list[i], is_train, whiten_data))
+			tensor_list.append(data_classes[i].decode_class.decode(data_list[i], distort_data,
+							whiten_data))
 		else:
 			tensor_list.append(data_list[i])
 	tensor_list.append(next_line)
